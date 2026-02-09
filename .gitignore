@@ -1,0 +1,48 @@
+# ---------------- ESP32/ESP-WHO 编译产物 ----------------
+# 编译目录（ESP-IDF 编译的所有产物都在这里）
+build/
+# SDK 配置文件（本地编译配置，不需要提交）
+sdkconfig
+sdkconfig.old
+# 临时编译文件
+*.o
+*.elf
+*.bin
+*.map
+# 烧录日志
+flash.log
+
+# ---------------- 系统临时文件 ----------------
+# Windows 特殊文件（解决你遇到的 nul 报错）
+nul
+Thumbs.db
+Desktop.ini
+# macOS 系统文件
+.DS_Store
+.AppleDouble
+.LSOverride
+# Linux 临时文件
+*~
+.fuse_hidden*
+
+# ---------------- 编辑器/IDE 配置 ----------------
+# VSCode
+.vscode/
+.vs/
+# CLion/IDEA
+.idea/
+*.iml
+# Vim 编辑器
+*.swp
+*.swo
+
+# ---------------- 其他无关文件 ----------------
+# 日志文件
+*.log
+*.tmp
+# 缓存文件
+*.cache
+# 压缩包
+*.zip
+*.tar.gz
+*.7z
