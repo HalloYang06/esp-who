@@ -1,13 +1,6 @@
 #include "who_frame_lcd_disp.hpp"
 #include "esp_log.h"
-#include "bsp/esp-bsp.h"  // 包含 BSP 头文件以访问 panel_handle
-#include "esp_lcd_panel_ops.h"  // LCD panel 操作API
-#include "bsp_lcd.h"  // 使用BSP的分块传输函数
-
-// C语言全局变量声明（在文件顶部）
-extern "C" {
-    extern esp_lcd_panel_handle_t panel_handle;
-}
+#include "esp_lcd_panel_ops.h"
 
 static const char *TAG = "FrameLCDDisp";
 
@@ -23,25 +16,13 @@ WhoFrameLCDDisp::WhoFrameLCDDisp(const std::string &name, frame_cap::WhoFrameCap
 #if !BSP_CONFIG_NO_GRAPHIC_LIB
     bsp_display_lock(0);
 
-    // 创建Canvas用于绘制检测框（透明背景）
+    // 创建Canvas，用于显示摄像头画面 + 检测框叠加
     m_canvas = lv_canvas_create(lv_scr_act());
     ESP_LOGI(TAG, "Canvas created: %p", m_canvas);
-    lv_obj_set_size(m_canvas, frame_cap_node->get_fb_width(), frame_cap_node->get_fb_height());
     lv_obj_align(m_canvas, LV_ALIGN_CENTER, 0, 0);
     lv_obj_clear_flag(m_canvas, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_border_width(m_canvas, 0, LV_PART_MAIN);
     lv_obj_set_style_pad_all(m_canvas, 0, LV_PART_MAIN);
-
-    // 初始化图像描述符，用于显示摄像头数据
-    memset(&m_img_dsc, 0, sizeof(m_img_dsc));
-    m_img_dsc.header.always_zero = 0;
-    m_img_dsc.header.w = frame_cap_node->get_fb_width();
-    m_img_dsc.header.h = frame_cap_node->get_fb_height();
-    m_img_dsc.header.cf = LV_IMG_CF_TRUE_COLOR;  // RGB565
-    m_img_dsc.data_size = frame_cap_node->get_fb_width() * frame_cap_node->get_fb_height() * 2;
-    m_img_dsc.data = NULL;  // 将在每帧更新时设置
-
-    ESP_LOGI(TAG, "Image descriptor initialized: %dx%d", m_img_dsc.header.w, m_img_dsc.header.h);
 
     bsp_display_unlock();
 #endif
@@ -102,24 +83,20 @@ void WhoFrameLCDDisp::task()
         }
         m_lcd->draw_bitmap(fb->buf, (int)fb->width, (int)fb->height, 0, 0);
 #else
-        // 方法：直接通过LCD驱动绘制，不使用Canvas
-        // 使用BSP的分块传输函数来避免PSRAM DMA问题
-        if (panel_handle) {
-            // 使用BSP提供的分块传输函数（自动处理PSRAM到内部RAM的复制和字节序转换）
-            lcd_draw_bitmap(0, 0, fb->width, fb->height, fb->buf);
-
-            // 适中延迟，平衡帧率和稳定性
-            vTaskDelay(pdMS_TO_TICKS(40));
-        } else {
-            ESP_LOGW(TAG, "panel_handle is NULL!");
-        }
-
-        // 在Canvas上绘制检测框（透明背景，不遮挡摄像头画面）
+        // 通过LVGL Canvas显示：将摄像头帧设为Canvas缓冲区，LVGL统一刷新到LCD
         bsp_display_lock(0);
+
+        // 将摄像头帧数据设置为Canvas的缓冲区（零拷贝，直接引用帧数据）
+        lv_canvas_set_buffer(m_canvas, fb->buf, fb->width, fb->height, LV_IMG_CF_TRUE_COLOR);
+
+        // 在Canvas上叠加绘制检测框
         if (m_lcd_disp_cb) {
             m_lcd_disp_cb(fb);
-            ESP_LOGD(TAG, "Detection boxes drawn");
         }
+
+        // 标记Canvas需要刷新，LVGL任务会在下次lv_timer_handler()时将数据发送到LCD
+        lv_obj_invalidate(m_canvas);
+
         bsp_display_unlock();
 #endif
     }

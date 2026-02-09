@@ -4,22 +4,10 @@
 #include <vector>
 
 namespace who {
-inline lv_color_t cvt_little_endian_lv_color(const lv_color_t &color)
-{
-    lv_color_t new_color;
-    new_color.ch.red = (color.ch.green & 0x1c) << 3 | (color.ch.blue & 0xc0) >> 3;
-    new_color.ch.green = (color.ch.blue & 0x38) << 2 | (color.ch.red & 0xe0) >> 3;
-    new_color.ch.blue = (color.ch.red & 0x18) << 3 | (color.ch.green & 0xe0) >> 2;
-    return new_color;
-}
-
 inline lv_color_t cvt_to_lv_color(const std::vector<uint8_t> &color)
 {
-#if CONFIG_IDF_TARGET_ESP32P4
+    // 直接使用 lv_color_make，LVGL 会根据 LV_COLOR_16_SWAP 配置自动处理字节序
     return lv_color_make(color[0], color[1], color[2]);
-#else
-    return cvt_little_endian_lv_color(lv_color_make(color[0], color[1], color[2]));
-#endif
 }
 
 inline std::vector<lv_color_t> cvt_to_lv_palette(const std::vector<std::vector<uint8_t>> &palette)

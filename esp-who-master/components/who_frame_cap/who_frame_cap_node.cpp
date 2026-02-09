@@ -131,8 +131,19 @@ void WhoFrameCapNode::task()
         xSemaphoreTake(m_mutex, portMAX_DELAY);
         update_ringbuf(out_fb);
         bool full_ringbuf = m_cam_fbs.full();
+        size_t ringbuf_size = m_cam_fbs.size();
         xSemaphoreGive(m_mutex);
+
+        // 添加调试日志
+        static int frame_count = 0;
+        if (frame_count % 30 == 0) {  // 每30帧打印一次
+            ESP_LOGI("FetchNode", "环形缓冲区状态: size=%d, full=%d, 订阅者数=%d",
+                     ringbuf_size, full_ringbuf, m_tasks.size());
+        }
+        frame_count++;
+
         if (full_ringbuf) {
+            ESP_LOGI("FetchNode", "环形缓冲区已满，触发NEW_FRAME事件给%d个订阅者", m_tasks.size());
             for (const auto &task : m_tasks) {
                 if (task->is_active()) {
                     xEventGroupSetBits(task->get_event_group(), NEW_FRAME);
@@ -161,22 +172,7 @@ void WhoFetchNode::cleanup()
 
 cam_fb_t *WhoFetchNode::process(who::cam::cam_fb_t *fb)
 {
-    auto raw_fb = m_cam->cam_fb_get();
-
-    // ESP32-S3: GC0308输出小端RGB565，但DL和LCD需要大端
-    // 在这里统一转换，避免后续多次转换
-#if CONFIG_IDF_TARGET_ESP32S3
-    if (raw_fb && raw_fb->format == cam_fb_fmt_t::CAM_FB_FMT_RGB565) {
-        uint16_t *data = (uint16_t *)raw_fb->buf;
-        size_t pixel_count = raw_fb->width * raw_fb->height;
-        for (size_t i = 0; i < pixel_count; i++) {
-            uint16_t pixel = data[i];
-            data[i] = (pixel >> 8) | (pixel << 8);  // 小端转大端
-        }
-    }
-#endif
-
-    return raw_fb;
+    return m_cam->cam_fb_get();
 }
 
 void WhoFetchNode::update_ringbuf(who::cam::cam_fb_t *fb)

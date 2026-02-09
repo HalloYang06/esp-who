@@ -24,7 +24,6 @@ private:
     lcd::WhoLCD *m_lcd;
 #if !BSP_CONFIG_NO_GRAPHIC_LIB
     lv_obj_t *m_canvas;
-    lv_img_dsc_t m_img_dsc;  // 图像描述符，用于img对象显示摄像头数据
 #endif
     frame_cap::WhoFrameCapNode *m_frame_cap_node;
     bool m_peek_index;

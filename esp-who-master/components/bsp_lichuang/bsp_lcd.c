@@ -136,7 +136,7 @@ esp_err_t display_new(){
     esp_lcd_panel_invert_color(panel_handle, true);
     // 恢复原始配置
     esp_lcd_panel_swap_xy(panel_handle, true);
-    esp_lcd_panel_mirror(panel_handle, true, false);
+    esp_lcd_panel_mirror(panel_handle, false, false);
 
     // 分配DMA缓冲区（必须在内部RAM中用于SPI DMA）
     size_t dma_buffer_size = BSP_LCD_H_RES * LCD_DMA_CHUNK_LINES * sizeof(uint16_t);
