@@ -1,0 +1,15 @@
+menu "Lichuang Board BSP Configuration"
+
+    config BSP_BOARD_LICHUANG
+        bool "Use Lichuang ESP32-S3 Board"
+        default n
+        help
+            Enable support for Lichuang ESP32-S3 development board.
+            This board features:
+            - ESP32-S3 chip
+            - GC0308 camera sensor
+            - ST7789 LCD display (320x240)
+            - PCA9557 I/O expander
+            - 8MB PSRAM
+
+endmenu

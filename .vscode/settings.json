@@ -1,0 +1,7 @@
+{
+    "idf.pythonInstallPath": "C:\\Users\\27352\\.espressif\\tools\\idf-python\\3.11.2\\python.exe",
+    "idf.openOcdConfigs": [
+        "board/esp32s3-builtin.cfg"
+    ],
+    "cmake.ignoreCMakeListsMissing": true
+}
